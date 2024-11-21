@@ -62,7 +62,7 @@ def salt_scrub_instructions():
         st.image("https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTVoMjV1aDZtY2Uwd3dqb3JudG02Yzl3bzN2Y2phOWZnd2s0Z3ZjbyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0Iyb2pEevoDThkFW/giphy.webp", width=150)
         message = ai.prompt.to_prompt(available_oils, instructions)
         reciepe, proportions = ai.prompt.run_ollama_model(message)
-    placeholder.empty()
+        placeholder.empty()
     st.write(reciepe)
     st.write(proportions)
     st.title("Step 4:Salt Scrub Recipe")

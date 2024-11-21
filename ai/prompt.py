@@ -1,7 +1,7 @@
 import ollama
 import re
 
-
+critique_fail_message = {'role':'user', 'content': "I could not retrieve oils with their percentages, try again. This time ensure to output oil names and their percentages in the blend"}
 examples = ("Examples: "
             "Input: blend used 40% vetiver, 30% lavander and 30% rose. Output: <start>vetiver:0.4,lavender:0.3,rose:0.3<end>."
             "Input: blend used 10% jasmine, 40% spearmint, 50% chamomile. Output: <start>jasmine:0.1, spearmint:0.4, chamomile: 0.5<end>.")
@@ -12,14 +12,14 @@ def start_models():
     modelfile = '''
     FROM llama3.2
     PARAMETER temperature 0.7
-    SYSTEM You are expert in aromatherapy. You help to create wonderful scents using essential oil. In each blend you combine 3 oils - one base, one middle and one top. Use any combination from list of oils given to you. Answer as blending expert only. Explain why you choose the oils in each blend. Output must include: oil A : percent on oil A, oil B- percent of oil B, oil C - percent of oil C.
+    SYSTEM You are expert in aromatherapy. You help to create wonderful scents using essential oil. In each blend you combine 3 oils - one base, one middle and one top. Use any combination from list of oils given to you. Answer as blending expert only. Explain why you choose the oils in each blend. Output must include: oil A : percent on oil A, oil B- percent of oil B, oil C - percent of oil C. On any input you must always output single blend.
     '''
     ollama.create(model='blending_expert', modelfile=modelfile)
 
     modelfile = '''
        FROM llama3.2
        PARAMETER temperature 0
-       SYSTEM : parse given message and output string describing oils that were used and their percent. use following format: <start>oil1:0.3, oil2:0.6, oil3:0.1<end>. for example if blending used 50% lavender, 25% myrhh, 25% lemon. output : <start>lavender:0.5, mythh:0.25, lemon:0.25<end>. Use this format exactly
+       SYSTEM : parse given message and output string describing oils that were used and their percent. use following format: <start>oil1:0.3, oil2:0.6, oil3:0.1<end>. for example if blending used 50% lavender, 25% myrhh, 25% lemon. output : <start>lavender:0.5, mythh:0.25, lemon:0.25<end>. Use this format exactly. If not match if found return oil names with percentages based on your knowledge.
        '''
     ollama.create(model='critique', modelfile=modelfile)
 
@@ -37,15 +37,14 @@ def run_ollama_model(message):
     ret = {}
     max_retries = 5
     curr_try = 0
+    messages = []
+    messages.append({'role' : 'user', 'content': message})
+
     while len(ret) ==0 and curr_try<max_retries:
-        response = ollama.chat(model='blending', messages=[
-            {
-                'role': 'user',
-                'content': message
-            },
-        ],
-        )
+        response = ollama.chat(model='blending', messages= messages)
         response = response['message']['content']
+        messages.append({'role': 'assistant', 'content': response})
+        print(response)
         proportions = ollama.chat(model='critique', messages=[
             {
                 'role': 'user',
@@ -67,10 +66,11 @@ def run_ollama_model(message):
                     ret[val[0].strip()] =  float(val[1].strip())
             except:
                 ret ={}
-                curr_try+=1
+                messages.append(critique_fail_message)
         else:
             curr_try += 1
             print(f"No match found {proportions}")
+            messages.append(critique_fail_message)
     return response, ret
 
 
