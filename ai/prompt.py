@@ -48,7 +48,7 @@ def run_ollama_model(message):
         proportions = ollama.chat(model='critique', messages=[
             {
                 'role': 'user',
-                'content': examples+ "create Output for following input: "+response
+                'content': examples+ ". Create Output for following input: "+response
             },
         ],
         )
@@ -71,6 +71,10 @@ def run_ollama_model(message):
             curr_try += 1
             print(f"No match found {proportions}")
             messages.append(critique_fail_message)
+        if "oil" in list(ret.keys())[0]:
+            ret = {}
+            messages.append(critique_fail_message)
+
     return response, ret
 
 

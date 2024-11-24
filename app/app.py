@@ -1,3 +1,9 @@
+import os
+import sys
+if os.path.exists("/mount/src/aromatherapy"):
+    os.chdir("/mount/src/aromatherapy")
+    sys.path.append("/mount/src/aromatherapy")
+
 import streamlit as st
 import all_oils
 from ai import prompt
@@ -6,12 +12,13 @@ st.session_state["initialized"] = False
 def init_app():
     if st.session_state["initialized"] == False:
         st.session_state["initialized"] = True
+        st.session_state["finished_blending"] = False
         prompt.start_models()
 
 # Stage 1: Welcome and pick oils
 def welcome_and_pick_oils():
     init_app()
-    st.title("Welcome to Your Personalized Salt Scrub App!")
+    st.title("Welcome to Your Personalized Fragrance App!")
     st.subheader("Step 1: Choose Your Oils")
 
     oils = [o.name.lower() for o in all_oils.get_all_oils()]
@@ -57,11 +64,15 @@ def salt_scrub_instructions():
     available_oils = st.session_state['oils']
     instructions = st.session_state['scent_instruction']
     placeholder = st.empty()
+    reciepe =""
+    proportions={}
     with placeholder.container():
         st.subheader("Crafting Your Perfect Scent...")
         st.image("https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTVoMjV1aDZtY2Uwd3dqb3JudG02Yzl3bzN2Y2phOWZnd2s0Z3ZjbyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0Iyb2pEevoDThkFW/giphy.webp", width=150)
-        message = ai.prompt.to_prompt(available_oils, instructions)
-        reciepe, proportions = ai.prompt.run_ollama_model(message)
+        if st.session_state["finished_blending"] == False:
+            st.session_state["finished_blending"] = True
+            message = ai.prompt.to_prompt(available_oils, instructions)
+            reciepe, proportions = ai.prompt.run_ollama_model(message)
         placeholder.empty()
     st.write(reciepe)
     st.write(proportions)
@@ -79,6 +90,7 @@ def salt_scrub_instructions():
     # Restart button
     if st.button("Restart"):
         st.session_state["stage"] = "welcome"
+        st.session_state["finished_blending"] = False
         st.rerun()
 
 
